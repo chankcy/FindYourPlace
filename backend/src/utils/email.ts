@@ -1,13 +1,16 @@
 import nodemailer from 'nodemailer';
 
+const port = parseInt(process.env.SMTP_PORT || '465');
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: true, // true for 465, false for other ports
+  port: port,
+  secure: port === 465, // Automatically true for 465, false for 587
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 10000, // 10 seconds timeout
 });
 
 // 1. Automatic reply for submission of user enquiries
