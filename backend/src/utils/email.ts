@@ -5,13 +5,14 @@ const port = parseInt(process.env.SMTP_PORT || '465');
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: port,
-  secure: port === 465, // Automatically true for 465, false for 587
+  secure: port === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  connectionTimeout: 10000, // 10 seconds timeout
-});
+  family: 4, // Forces IPv4 connection to bypass Render IPv6 timeouts
+  connectionTimeout: 10000,
+} as any);
 
 // 1. Automatic reply for submission of user enquiries
 export const sendEnquiryConfirmation = async (to: string, name: string, message: string) => {
@@ -22,18 +23,16 @@ export const sendEnquiryConfirmation = async (to: string, name: string, message:
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
         <h2>Thank you for contacting us, ${name}!</h2>
-        <p>We have successfully received your enquiry:</p>
-        <blockquote style="background: #f4f4f4; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;">
-          "${message}"
+        <p>We have received your message:</p>
+        <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #2fa4a5;">
+          ${message}
         </blockquote>
-        <p>Our support team will review your message and reply as soon as possible.</p>
-        <br />
-        <p>Best regards,<br /><strong>Hotel Reservations Team</strong></p>
+        <p>Our team will get back to you shortly.</p>
       </div>
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  await transporter.sendMail(mailOptions);
 };
 
 // 2. Confirmation email for successful property reservations
