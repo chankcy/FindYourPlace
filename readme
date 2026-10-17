@@ -1,0 +1,112 @@
+# FindYourPlace — Backend Setup & Local Deployment Guide
+
+This guide covers the necessary database configuration, environment setup, and startup commands required before running the backend API and frontend client.
+
+---
+
+## Prerequisites
+
+* **Node.js**: v18.x or higher
+* **PostgreSQL**: Local service running (via XAMPP, PostgreSQL installer, or Docker)
+* **SMTP Credentials**: Gmail App Password or Mailtrap testing account
+
+---
+
+## 1. Environment Configuration
+
+Create a `.env` file inside the `backend` directory with the following variables:
+
+```env
+# Server Port
+PORT=3000
+
+# PostgreSQL Database Connection URL
+# Format: postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE_NAME>?schema=public
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/reservation_db?schema=public"
+
+# Authentication Security
+JWT_SECRET="your_jwt_secret_key_here"
+
+# SMTP Nodemailer Settings
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="youractualemail@gmail.com"
+SMTP_PASS="xxxx xxxx xxxx xxxx"  # 16-character Google App Password
+EMAIL_FROM="FindYourPlace <youractualemail@gmail.com>"
+
+```
+
+---
+
+## 2. Dependency Installation
+
+Install all required production and developer dependencies:
+
+```bash
+cd backend
+npm install
+
+```
+
+Ensure `package.json` includes the Prisma seed script definition:
+
+```json
+"prisma": {
+  "seed": "ts-node prisma/seed.ts"
+}
+
+```
+
+---
+
+## 3. Database Migration & Schema Sync
+
+Generate the local Prisma client types and apply the PostgreSQL schema migrations:
+
+```bash
+# Generate TypeScript types based on schema.prisma
+npx prisma generate
+
+# Push the Prisma schema directly to your PostgreSQL database
+npx prisma db push
+
+```
+
+---
+
+## 4. Database Seeding
+
+Populate PostgreSQL with initial sample data (seeds default properties and the test user `guest@fyp.com` / `password123`):
+
+```bash
+npx prisma db seed
+
+```
+
+*Verify that your terminal displays:*
+
+```text
+Created user: guest@fyp.com
+Successfully seeded 8 hotels!
+
+```
+
+---
+
+## 5. Running the Application
+
+### Start Backend API Server
+
+Launch the Express TypeScript development server:
+
+```bash
+npm run dev
+
+```
+
+The backend service will start on `http://localhost:3000` and automatically establish a connection to PostgreSQL.
+
+### Open Frontend Client
+
+* Open `index.html` directly in your browser or run it using a VS Code extension such as **Live Server**.
+* The page will automatically query `http://localhost:3000/api/properties` to render property listings from your PostgreSQL database.

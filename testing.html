@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindYourPlace | Friendly Reservations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#ccfbf1',
+                            DEFAULT: '#2fa4a5',
+                            dark: '#1e293b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { 
+            width: 6px; 
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+            background: transparent; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background-color: #cbd5e1; 
+            border-radius: 20px; 
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+        }
+        body.dark-mode .bg-white {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .bg-slate-50 {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+        }
+        body.dark-mode .bg-slate-100,
+        body.dark-mode .hover\:bg-slate-100:hover {
+            background-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+        body.dark-mode .text-slate-900,
+        body.dark-mode .text-slate-800,
+        body.dark-mode .text-slate-700,
+        body.dark-mode .text-slate-600 {
+            color: #f8fafc !important;
+        }
+        body.dark-mode .text-slate-500,
+        body.dark-mode .text-slate-400 {
+            color: #94a3b8 !important;
+        }
+        body.dark-mode .text-brand-dark {
+            color: #2fa4a5 !important;
+        }
+        body.dark-mode .border-slate-100,
+        body.dark-mode .border-slate-200 {
+            border-color: #334155 !important;
+        }
+        body.dark-mode input,
+        body.dark-mode select {
+            background-color: #1e293b !important;
+            color: #ffffff !important;
+            border-color: #475569 !important;
+        }
+
+        /* Dark Mode Card & Box Fixes */
+        body.dark-mode .bg-emerald-50 {
+            background-color: #064e3b !important;
+            border-color: #047857 !important;
+        }
+        body.dark-mode .text-emerald-800,
+        body.dark-mode .text-emerald-700,
+        body.dark-mode .text-emerald-600 {
+            color: #6ee7b7 !important;
+        }
+        body.dark-mode .bg-brand-light\/40,
+        body.dark-mode .bg-brand-light {
+            background-color: #134e4a !important;
+            border-color: #0f766e !important;
+        }
+
+        /* Dark Mode Button Styles */
+        body.dark-mode .bg-brand-dark {
+            background-color: #2fa4a5 !important;
+            color: #ffffff !important;
+        }
+        body.dark-mode .bg-brand-dark:hover {
+            background-color: #258384 !important;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes tickPop {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            70% { transform: scale(1.25) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        .animate-tick { animation: tickPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen overflow-hidden transition-colors duration-200">
+
+    <!-- Bot Verification Screen -->
+    <div id="botVerification" class="fixed inset-0 bg-brand-light z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-brand border-opacity-20 animate-slide-up relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand to-teal-400"></div>
+            
+            <img src="images/FindYourPlace logo.png" width="300" height="60" alt="FindYourPlace Logo" class="h-20 mx-auto mb-4 object-contain rounded-xl" onerror="this.src='https://placehold.co/200x80/2fa4a5/white?text=FindYourPlace'">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2" data-i18n="welcome">Welcome to FindYourPlace!</h2>
+            <p class="text-slate-500 mb-8 text-sm leading-relaxed" data-i18n="verifyDesc">To keep our community safe, please verify you are human before we find your perfect stay.</p>
+            
+            <!-- Bot Check Button Box -->
+            <div onclick="verifyHuman()" id="verifyCard" class="group relative w-full flex items-center justify-between bg-slate-50 border-2 border-slate-200 p-5 rounded-2xl hover:border-brand hover:bg-brand-light/30 transition cursor-pointer select-none">
+                <div class="flex items-center gap-4">
+                    <div class="w-9 h-9 border-2 border-slate-300 rounded-xl bg-white group-hover:border-brand flex items-center justify-center transition-all shadow-sm" id="verifyCheckbox"></div>
+                    <span class="font-bold text-slate-700 text-sm group-hover:text-brand-dark transition" id="verifyLabel" data-i18n="iAmHuman">I am human</span>
+                </div>
+                
+                <div class="flex flex-col items-end opacity-75">
+                    <i class="fa-solid fa-shield-halved text-brand text-xl"></i>
+                    <span class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">reCAPTCHA</span>
+                </div>
+            </div>
+
+            <div id="verifyStatusText" class="mt-4 text-xs font-semibold text-slate-400 min-h-[18px]" data-i18n="clickToConfirm">
+                Click the checkbox to confirm
+            </div>
+        </div>
+    </div>
+
+    <!-- Login / Registration Screen -->
+    <div id="loginPage" class="fixed inset-0 bg-slate-50 z-[90] hidden flex-col items-center justify-center p-4 animate-fade-in">
+        <div class="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-100 animate-slide-up">
+            <div class="text-center mb-6">
+                <img src="images/FindYourPlace logo.png" alt="FindYourPlace" class="h-16 mx-auto mb-4 object-contain rounded-lg" onerror="this.src='https://placehold.co/200x60/2fa4a5/white?text=FindYourPlace'">
+                <h2 class="text-2xl font-bold text-slate-800" id="authTitle" data-i18n="signIn">Sign In</h2>
+                <p class="text-sm text-slate-500 mt-1" id="authSubtitle" data-i18n="signInSub">Access your friendly booking dashboard</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex border-b border-slate-200 mb-6 text-sm font-bold">
+                <button type="button" id="tabSignIn" onclick="switchAuthTab('login')" class="flex-1 py-2 border-b-2 border-brand text-brand font-bold transition cursor-pointer" data-i18n="signIn">Sign In</button>
+                <button type="button" id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 py-2 border-b-2 border-transparent text-slate-500 hover:text-brand font-bold transition cursor-pointer" data-i18n="register">Register</button>
+            </div>
+            
+            <!-- Sign In Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="email">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="guest@fyp.com" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="password">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                </div>
+                
+                <div id="loginError" class="text-rose-500 text-xs font-semibold hidden text-center bg-rose-50 p-2 rounded-lg" data-i18n="invalidCreds">
+                    Invalid email or password. Please try again.
+                </div>
+
+                <button type="submit" class="w-full bg-brand-dark text-white font-bold py-3.5 rounded-xl hover:bg-brand transition shadow-md cursor-pointer" data-i18n="signIn">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="fullName">Full Name</label>
+                    <input type="text" id="regName" required placeholder="John Doe" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="email">Email Address</label>
+                    <input type="email" id="regEmail" required placeholder="user@example.com" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="password">Password</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••" minlength="6" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                </div>
+                
+                <div id="registerError" class="text-rose-500 text-xs font-semibold hidden text-center bg-rose-50 p-2 rounded-lg"></div>
+                <div id="registerSuccess" class="text-emerald-600 text-xs font-semibold hidden text-center bg-emerald-50 p-2 rounded-lg"></div>
+
+                <button type="submit" class="w-full bg-brand-dark text-white font-bold py-3.5 rounded-xl hover:bg-brand transition shadow-md cursor-pointer" data-i18n="createAccount">
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center flex flex-col gap-2">
+                <p class="text-xs text-slate-400 bg-slate-50 p-2 rounded-lg inline-block" data-i18n="demoAccess">
+                    <span class="font-bold text-slate-500">Demo Access:</span> guest@fyp.com / password123
+                </p>
+                <div class="flex justify-center gap-4">
+                    <button onclick="openAboutModal()" class="text-xs font-semibold text-brand hover:underline cursor-pointer">
+                        <i class="fa-solid fa-circle-info mr-1"></i> <span data-i18n="learnMore">Learn more about FindYourPlace</span>
+                    </button>
+                    <button onclick="resetBotVerification()" class="text-xs font-semibold text-slate-500 hover:text-brand cursor-pointer">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> <span data-i18n="testBotCheck">Test Bot Check Again</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden flex-col h-screen overflow-hidden animate-fade-in">
+        
+        <!-- Navigation Header -->
+        <header class="bg-white border-b border-slate-200 z-50 px-4 sm:px-6 py-3 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 sm:gap-4 shadow-sm shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0" onclick="resetSearch()">
+                <img src="images/FindYourPlace logo.png" alt="FindYourPlace" class="h-9 sm:h-10 object-contain rounded-md" onerror="this.src='https://placehold.co/120x40/2fa4a5/white?text=FYP'">
+                <span class='font-extrabold text-base md:text-lg lg:text-xl text-brand-dark hidden sm:block whitespace-nowrap'>FindYourPlace</span>
+            </div>
+
+            <!-- Search Inputs -->
+            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-full shadow-sm hover:shadow-md transition p-1.5 flex-1 max-w-2xl min-w-[260px] relative">
+                
+                <!-- Where -->
+                <div class="flex-1 px-4 py-1 border-r border-slate-200 hidden sm:block relative cursor-pointer group" onclick="document.getElementById('locInput').focus()">
+                    <label class="block text-[10px] font-bold text-slate-800 uppercase tracking-wider" data-i18n="where">Where</label>
+                    <input type="text" id="locInput" placeholder="Search destinations" data-i18n-placeholder="searchDest" class="w-full text-sm bg-transparent focus:outline-none text-slate-600 truncate" autocomplete="off" oninput="showSuggestions(this.value)">
+                    <div id="autocompleteDropdown" class="absolute top-full left-0 mt-4 w-full bg-white border border-slate-200 rounded-3xl shadow-xl hidden z-[60] max-h-48 overflow-y-auto custom-scrollbar py-2"></div>
+                </div>
+                
+                <!-- When -->
+                <div class="flex-1 px-4 py-1 border-r border-slate-200 hidden md:block relative cursor-pointer hover:bg-slate-100 rounded-full transition" id="dateSelectorBtn">
+                    <label class="block text-[10px] font-bold text-slate-800 uppercase tracking-wider pointer-events-none" data-i18n="when">When</label>
+                    <div class="text-sm text-slate-600 truncate pointer-events-none" id="dateDisplay" data-i18n="addDates">Add dates</div>
+                    
+                    <div id="dateDropdown" class="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-white border border-slate-200 rounded-3xl shadow-xl hidden z-[60] w-[90vw] md:w-[680px] p-6 cursor-default" onclick="event.stopPropagation()">
+                        <div class="flex flex-col md:flex-row gap-8" id="calendarContainer"></div>
+                    </div>
+                </div>
+                
+                <!-- Who -->
+                <div class="flex-1 px-4 py-1 hidden lg:block relative cursor-pointer hover:bg-slate-100 rounded-full transition" id="guestSelectorBtn">
+                    <label class="block text-[10px] font-bold text-slate-800 uppercase tracking-wider pointer-events-none" data-i18n="who">Who</label>
+                    <div class="text-sm text-slate-600 truncate pointer-events-none" id="guestDisplay" data-i18n="addGuests">Add guests</div>
+                    
+                    <div id="guestDropdown" class="absolute top-full right-0 mt-4 bg-white border border-slate-200 rounded-3xl shadow-xl hidden z-[60] w-80 p-6 cursor-default" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-center py-3 border-b border-slate-100">
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm" data-i18n="adults">Adults</div>
+                                <div class="text-slate-400 text-xs" data-i18n="ages13">Ages 13+</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:border-slate-800 transition" onclick="updateGuest('adults', -1)" id="btn-adults-minus">-</button>
+                                <span class="w-4 text-center text-sm font-semibold" id="count-adults">0</span>
+                                <button class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:border-slate-800 transition" onclick="updateGuest('adults', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center py-3">
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm" data-i18n="children">Children</div>
+                                <div class="text-slate-400 text-xs" data-i18n="ages2_12">Ages 2-12</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:border-slate-800 transition" onclick="updateGuest('children', -1)" id="btn-children-minus">-</button>
+                                <span class="w-4 text-center text-sm font-semibold" id="count-children">0</span>
+                                <button class="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center text-slate-500 hover:border-slate-800 transition" onclick="updateGuest('children', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="searchPlaces()" class="bg-brand text-white rounded-full px-6 py-3 font-semibold flex items-center justify-center hover:bg-brand-dark transition gap-2 w-full sm:w-auto shrink-0 z-10 cursor-pointer">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    <span class="sm:hidden" data-i18n="search">Search</span>
+                </button>
+            </div>
+
+            <!-- Accessibility & Controls -->
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <button onclick="openAboutModal()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3 py-2 rounded-full border border-slate-200 transition cursor-pointer">
+                    <i class="fa-solid fa-building-user text-brand"></i>
+                    <span data-i18n="aboutUs" class="hidden sm:inline">About Us</span>
+                </button>
+
+                <button onclick="openBookingHistoryModal()" class="flex items-center gap-1.5 bg-brand-light text-brand-dark font-bold text-xs px-3 py-2 rounded-full border border-brand/20 hover:bg-brand hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span class="hidden sm:inline" data-i18n="myBookings">My Bookings</span>
+                    <span id="bookingBadgeCount" class="bg-brand-dark text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center ml-1">0</span>
+                </button>
+
+                <select id="fontSizeSelect" onchange="changeFontSize(this.value)" class="bg-slate-50 border border-slate-200 text-xs rounded-full px-2.5 py-2 font-semibold text-slate-600 focus:outline-none cursor-pointer">
+                    <option value="small">A- (Small)</option>
+                    <option value="medium" selected>A (Normal)</option>
+                    <option value="large">A+ (Large)</option>
+                </select>
+
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-slate-50 border border-slate-200 text-xs rounded-full px-2.5 py-2 font-semibold text-slate-600 focus:outline-none cursor-pointer">
+                    <option value="en">English</option>
+                    <option value="zh">繁體中文</option>
+                    <option value="es">Español</option>
+                </select>
+
+                <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-8 h-8 sm:w-9 sm:h-9 border border-slate-200 rounded-full flex items-center justify-center hover:bg-slate-100 transition text-slate-600 cursor-pointer" title="Toggle Dark Mode">
+                    <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+                </button>
+
+                <button onclick="handleLogout()" class="flex items-center gap-2 border border-slate-200 rounded-full p-1 sm:p-1.5 px-2.5 hover:shadow-md transition cursor-pointer bg-white" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket text-slate-400 text-xs"></i>
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 bg-brand-dark text-white rounded-full flex items-center justify-center text-xs font-bold" id="userBadge">FYP</div>
+                </button>
+            </div>
+        </header>
+
+        <!-- Preferences Section -->
+        <section class="bg-white border-b border-slate-100 px-6 py-3 shrink-0">
+            <div class="flex items-center justify-between gap-4 overflow-x-auto custom-scrollbar pb-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"><i class="fa-solid fa-wand-magic-sparkles text-brand mr-1"></i> <span data-i18n="preference">Preference:</span></span>
+                    <button onclick="filterByPreference('all')" id="pref-all" class="pref-btn bg-brand text-white text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap" data-i18n="allStays">All Stays</button>
+                    <button onclick="filterByPreference('beach')" id="pref-beach" class="pref-btn bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap"><i class="fa-solid fa-umbrella-beach text-sky-500 mr-1"></i> <span data-i18n="oceanBeach">Ocean & Beach</span></button>
+                    <button onclick="filterByPreference('mountain')" id="pref-mountain" class="pref-btn bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap"><i class="fa-solid fa-mountain text-emerald-600 mr-1"></i> <span data-i18n="mountainLodge">Mountain Lodge</span></button>
+                    <button onclick="filterByPreference('city')" id="pref-city" class="pref-btn bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap"><i class="fa-solid fa-city text-purple-500 mr-1"></i> <span data-i18n="cityLuxury">City Luxury</span></button>
+                    <button onclick="filterByPreference('budget')" id="pref-budget" class="pref-btn bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap"><i class="fa-solid fa-piggy-bank text-amber-500 mr-1"></i> <span data-i18n="under200">Under $200</span></button>
+                </div>
+
+                <div id="recommendationBanner" class="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg text-xs font-semibold shrink-0">
+                    <i class="fa-solid fa-thumbs-up"></i>
+                    <span id="recText" data-i18n="recTopPicks">Top picks based on your style!</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <main class="flex flex-1 overflow-hidden relative">
+            <div id="gridContainer" class="w-full h-full overflow-y-auto custom-scrollbar p-6 bg-slate-50 transition-all duration-300">
+                <div class="mb-6 flex justify-between items-end">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800" id="resultsTitle" data-i18n="popularHomes">Popular homes</h1>
+                        <p class="text-xs text-slate-500 mt-1" id="searchMeta">Showing 50 available handpicked properties</p>
+                    </div>
+                </div>
+                <div id="hotelGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-20"></div>
+            </div>
+
+            <!-- Map Panel -->
+            <div id="mapContainer" class="hidden relative transition-all duration-300 border-l border-slate-200">
+                <div class="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-slate-200 max-w-xs w-full animate-slide-up">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-700"><i class="fa-solid fa-sliders text-brand mr-1"></i> <span data-i18n="mapPriceFilter">Map Price Filter</span></span>
+                        <span class="text-xs font-bold text-brand" id="mapPriceVal">Max: $500</span>
+                    </div>
+                    
+                    <input type="range" id="mapPriceSlider" min="100" max="500" step="25" value="500" oninput="handleMapPriceFilter(this.value)" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand mb-3">
+                    
+                    <div class="grid grid-cols-3 gap-1">
+                        <button onclick="setMapPricePreset(0, 500)" class="text-[10px] font-bold bg-slate-100 hover:bg-brand hover:text-white py-1 rounded-md text-slate-600 transition" data-i18n="all">All</button>
+                        <button onclick="setMapPricePreset(0, 200)" class="text-[10px] font-bold bg-slate-100 hover:bg-brand hover:text-white py-1 rounded-md text-slate-600 transition">&lt; $200</button>
+                        <button onclick="setMapPricePreset(200, 350)" class="text-[10px] font-bold bg-slate-100 hover:bg-brand hover:text-white py-1 rounded-md text-slate-600 transition">$200-$350</button>
+                    </div>
+                </div>
+
+                <iframe 
+                    id="mapFrame"
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    scrolling="no" 
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=-0.145,51.50,-0.12,51.52&layer=mapnik" 
+                    class="w-full h-full border-none">
+                </iframe>
+                
+                <button onclick="resetSearch()" class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg text-slate-600 hover:text-brand transition z-10 cursor-pointer" title="Close Map View">
+                    <i class="fa-solid fa-compress text-sm"></i>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl p-6 md:p-10 max-w-3xl w-full my-auto shadow-2xl relative border border-slate-100 animate-slide-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="closeAboutModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition cursor-pointer bg-slate-100 rounded-full w-9 h-9 flex items-center justify-center z-10">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+
+            <div class="flex items-center gap-4 mb-6 border-b border-slate-100 pb-6">
+                <img src="images/FindYourPlace logo.png" alt="FindYourPlace" class="h-14 object-contain rounded-lg" onerror="this.src='https://placehold.co/180x60/2fa4a5/white?text=FindYourPlace'">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800" data-i18n="aboutTitle">About FindYourPlace</h2>
+                    <p class="text-sm font-semibold text-brand" data-i18n="aboutSub">Friendly, Seamless & Transparent Reservations</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 text-slate-600 text-sm leading-relaxed">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-rocket text-brand"></i> <span data-i18n="foundingStoryTitle">Our Founding Story</span>
+                    </h3>
+                    <p data-i18n="foundingStoryP1">
+                        Founded by avid travelers and web architects, FindYourPlace (FYP) was born out of frustration with overly complex booking platforms riddled with hidden charges, misleading photos, and robotic customer service.
+                    </p>
+                    <p class="mt-2" data-i18n="foundingStoryP2">
+                        We envisioned a warmer, human-centric alternative where booking a cozy villa in Malibu or an alpine chalet in Aspen feels as delightful as the stay itself.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+                    <div class="bg-brand-light/40 p-5 rounded-2xl border border-brand/20">
+                        <div class="flex items-center gap-2 font-bold text-brand-dark mb-2 text-base">
+                            <i class="fa-solid fa-compass text-brand"></i> <span data-i18n="ourMission">Our Mission</span>
+                        </div>
+                        <p class="text-xs text-slate-700" data-i18n="missionText">
+                            To empower global travelers with effortless discovery, transparent pricing, and instant human verification to ensure safe, memorable stays every time.
+                        </p>
+                    </div>
+
+                    <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
+                        <div class="flex items-center gap-2 font-bold text-emerald-800 mb-2 text-base">
+                            <i class="fa-solid fa-eye text-emerald-600"></i> <span data-i18n="ourVision">Our Vision</span>
+                        </div>
+                        <p class="text-xs text-slate-700" data-i18n="visionText">
+                            Building the world's most trusted, accessible, and friendly accommodation ecosystem where every stay feels like coming home.
+                        </p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-brand"></i> <span data-i18n="fypByNumbers">FYP By The Numbers</span>
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-xl font-extrabold text-brand-dark">50+</div>
+                            <div class="text-[11px] text-slate-400 font-bold uppercase" data-i18n="curatedStays">Curated Stays</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-xl font-extrabold text-brand-dark">25+</div>
+                            <div class="text-[11px] text-slate-400 font-bold uppercase" data-i18n="countries">Countries</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-xl font-extrabold text-brand-dark">120K+</div>
+                            <div class="text-[11px] text-slate-400 font-bold uppercase" data-i18n="happyGuests">Happy Guests</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-xl font-extrabold text-brand-dark">4.9★</div>
+                            <div class="text-[11px] text-slate-400 font-bold uppercase" data-i18n="avgRating">Avg Rating</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-4 border-t border-slate-100 flex justify-end">
+                <button onclick="closeAboutModal()" class="bg-brand text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-brand-dark transition shadow-md cursor-pointer" data-i18n="backToExplore">
+                    Back to Explore
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking History Modal -->
+    <div id="bookingHistoryModal" class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl relative border border-slate-100 animate-slide-up">
+            <button onclick="closeBookingHistoryModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition cursor-pointer bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-brand-light text-brand rounded-2xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800" data-i18n="myBookingHistory">My Booking History</h2>
+                    <p class="text-xs text-slate-500" data-i18n="bookingHistorySub">View and manage all your completed hotel reservations.</p>
+                </div>
+            </div>
+            
+            <div id="bookingList" class="flex-1 overflow-y-auto custom-scrollbar mt-4 space-y-3 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- Payment Page -->
+    <div id="paymentPage" class="hidden min-h-screen bg-slate-50 overflow-y-auto p-4 md:p-8 animate-fade-in">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-start justify-center pt-6 animate-slide-up">
+            <div class="w-full md:w-3/5 bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="closePayment()" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand transition cursor-pointer">
+                        <i class="fa-solid fa-arrow-left"></i> <span data-i18n="backToRooms">Back to rooms</span>
+                    </button>
+                    <img src="images/FindYourPlace logo.png" alt="FindYourPlace" class="h-8 object-contain rounded" onerror="this.style.display='none';">
+                </div>
+                
+                <h3 class="text-2xl font-bold text-slate-800 mb-1" data-i18n="secureCheckout">Secure Checkout</h3>
+                <p class="text-sm text-slate-500 mb-6" data-i18n="checkoutSub">Complete your payment details securely below.</p>
+                
+                <form onsubmit="processPayment(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="cardHolderName">Cardholder Name</label>
+                        <input type="text" id="cardHolderName" required placeholder="John Doe" 
+                               oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')"
+                               class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="cardNumber">Card Number</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-credit-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="cardNumber" required placeholder="0000 0000 0000 0000" maxlength="19"
+                                   oninput="formatCardNumber(this)"
+                                   class="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-brand">
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="expiryDate">Expiry Date</label>
+                            <input type="text" id="cardExpiry" required placeholder="MM/YY" maxlength="5"
+                                   oninput="formatExpiry(this)"
+                                   class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1" data-i18n="cvc">CVC</label>
+                            <input type="text" id="cardCVC" required placeholder="123" maxlength="4"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand">
+                        </div>
+                    </div>
+                    
+                    <div id="paymentError" class="text-rose-500 text-xs font-semibold hidden text-center bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
+
+                    <button type="submit" id="payButton" class="w-full bg-brand text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 mt-4 cursor-pointer">
+                        <i class="fa-solid fa-lock text-sm"></i> <span data-i18n="completeBooking">Complete Secure Booking</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="w-full md:w-2/5 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4">
+                <h4 class="font-bold text-slate-800 border-b border-slate-100 pb-2" data-i18n="bookingSummary">Booking Summary</h4>
+                <img id="paymentHotelImg" class="w-full h-40 object-cover rounded-2xl bg-slate-100" src="" alt="Hotel layout">
+                <div>
+                    <p class="text-sm text-brand font-bold uppercase tracking-wide" id="paymentHotelLoc">Location</p>
+                    <h3 class="font-bold text-lg text-slate-800 leading-tight" id="paymentHotelName">Hotel Name</h3>
+                </div>
+                <div class="border-t border-slate-100 pt-4 space-y-2 text-sm text-slate-600">
+                    <div class="flex justify-between"><span data-i18n="serviceFee">Service Fee</span><span class="text-slate-400" data-i18n="included">Included</span></div>
+                    <div class="flex justify-between"><span data-i18n="localTaxes">Local Taxes</span><span class="text-slate-400" data-i18n="included">Included</span></div>
+                    <div class="flex justify-between font-bold text-xl text-slate-800 border-t border-slate-100 pt-3 mt-2">
+                        <span data-i18n="totalDue">Total Due</span>
+                        <span id="paymentTotal">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Compare Action Button -->
+    <button id="compareFloatBtn" onclick="showCompareModal()" class="fixed bottom-8 right-8 bg-brand-dark text-white px-6 py-4 rounded-full shadow-2xl font-bold hidden items-center gap-3 hover:bg-slate-800 hover:scale-105 transition z-50 cursor-pointer border-2 border-white">
+        <i class="fa-solid fa-code-compare"></i> <span data-i18n="compare">Compare</span> (<span id="compareCount">0</span>)
+    </button>
+
+    <!-- Comparison Modal -->
+    <div id="compareModal" class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-6xl w-full max-h-[90vh] flex flex-col shadow-2xl relative border border-slate-100 animate-slide-up">
+            <button onclick="closeCompareModal()" class="absolute top-6 right-6 text-slate-400 hover:text-rose-500 transition cursor-pointer bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="flex items-center gap-4 mb-2">
+                <img src="images/FindYourPlace logo.png" alt="FindYourPlace" class="h-10 object-contain rounded" onerror="this.style.display='none';">
+                <h2 class="text-2xl font-bold text-slate-800" data-i18n="compareStays">Compare Stays</h2>
+            </div>
+            <p class="text-sm text-slate-500 mb-6" data-i18n="compareDesc">Review your selected properties side-by-side to find your perfect place.</p>
+            
+            <div id="compareGrid" class="flex-1 overflow-x-auto custom-scrollbar flex gap-6 pb-4 snap-x"></div>
+        </div>
+    </div>
+
+    <script>
+        const defaultProperties = [
+            { id: 1, name: "Cozy Oceanview Villa", location: "Malibu, California", price: 250, rating: 4.9, capacity: 4, category: "beach", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80", coords: "-118.7798,34.0259", description: "Stunning ocean views with modern interior, private balcony, and direct beach access." },
+            { id: 2, name: "Alpine Timber Chalet", location: "Aspen, Colorado", price: 380, rating: 4.8, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80", coords: "-106.8175,39.1911", description: "Luxurious wooden lodge close to ski slopes with a heated outdoor hot tub." },
+            { id: 3, name: "Modern Downtown Loft", location: "New York, USA", price: 195, rating: 4.7, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80", coords: "-73.9855,40.7484", description: "High-rise luxury apartment in the heart of Manhattan with spectacular skyline views." },
+            { id: 4, name: "Serene Garden Cottage", location: "Kyoto, Japan", price: 160, rating: 4.95, capacity: 3, category: "budget", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80", coords: "135.7681,35.0116", description: "Traditional Japanese garden home with tatami rooms and peaceful surroundings." },
+            { id: 5, name: "Mediterranean Beach Pad", location: "Santorini, Greece", price: 310, rating: 4.88, capacity: 5, category: "beach", img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80", coords: "25.4317,36.3932", description: "Whitewashed villa overlooking the Aegean Sea with private infinity pool." },
+            { id: 6, name: "Swiss Alps Horizon Cabin", location: "Zermatt, Switzerland", price: 420, rating: 4.92, capacity: 4, category: "mountain", img: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=800&q=80", coords: "7.7491,46.0207", description: "Unmatched views of the Matterhorn with private sauna and fireplace." },
+            { id: 7, name: "Tokyo Shinjuku Sky Suite", location: "Tokyo, Japan", price: 220, rating: 4.85, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80", coords: "139.7006,35.6895", description: "Ultra-modern sky suite steps from neon lights and world-class dining." },
+            { id: 8, name: "Bali Bamboo Eco Sanctuary", location: "Ubud, Indonesia", price: 130, rating: 4.91, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80", coords: "115.2625,-8.5069", description: "Open-air handcrafted bamboo villa immersed in lush jungle landscapes." },
+            { id: 9, name: "Amalfi Cliffside Retreat", location: "Positano, Italy", price: 450, rating: 4.96, capacity: 4, category: "beach", img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80", coords: "14.4850,40.6281", description: "Panoramic Mediterranean terrace with lemon groves and private sea access." },
+            { id: 10, name: "Rocky Mountain Timber Lodge", location: "Banff, Canada", price: 290, rating: 4.83, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80", coords: "-115.5708,51.1784", description: "Rustic log home near Lake Louise with cozy fireplaces and mountain views." },
+            { id: 11, name: "Parisian Romantic Loft", location: "Paris, France", price: 210, rating: 4.79, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80", coords: "2.3522,48.8566", description: "Charming Haussmann apartment with wrought-iron balcony and Eiffel Tower glimpses." },
+            { id: 12, name: "Bohemian Seaside Bungalow", location: "Tulum, Mexico", price: 175, rating: 4.87, capacity: 3, category: "budget", img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80", coords: "-87.4654,20.2114", description: "Eco-chic beachfront cabana with hammocks and turquoise Caribbean waters." },
+            { id: 13, name: "Hawaiian Sunset Villa", location: "Maui, Hawaii", price: 490, rating: 4.98, capacity: 8, category: "beach", img: "https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=800&q=80", coords: "-156.3319,20.7984", description: "Expansive island resort home with private pool, lanais, and whale watching." },
+            { id: 14, name: "Nordic Aurora Glass Igloo", location: "Rovaniemi, Finland", price: 390, rating: 4.94, capacity: 2, category: "mountain", img: "https://images.unsplash.com/photo-1517411032315-54ef2cb783bb?auto=format&fit=crop&w=800&q=80", coords: "25.7294,66.5039", description: "Sleep under Northern Lights in heated glass dome in Finnish Lapland." },
+            { id: 15, name: "London Heritage Penthouse", location: "London, UK", price: 320, rating: 4.81, capacity: 4, category: "city", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80", coords: "-0.1276,51.5074", description: "Sophisticated brick penthouse near Covent Garden and Thames river." },
+            { id: 16, name: "Chiang Mai Teakwood Haven", location: "Chiang Mai, Thailand", price: 95, rating: 4.89, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80", coords: "98.9853,18.7883", description: "Peaceful teakwood home surrounded by tropical orchids and night markets." },
+            { id: 17, name: "Caribbean Coral Cove", location: "Barbados", price: 340, rating: 4.90, capacity: 5, category: "beach", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80", coords: "-59.5432,13.1939", description: "Direct oceanfront suite with private dock, snorkeling gear, and chef kitchen." },
+            { id: 18, name: "Dolomites Panorama Chalet", location: "Cortina, Italy", price: 310, rating: 4.86, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80", coords: "12.1357,46.5405", description: "Dramatic Italian alpine views with wooden interior and wellness spa area." },
+            { id: 19, name: "Singapore Marina Skyline Flat", location: "Singapore", price: 280, rating: 4.84, capacity: 3, category: "city", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80", coords: "103.8519,1.2902", description: "Sleek glass tower apartment overlooking Marina Bay Sands and city lights." },
+            { id: 20, name: "Sunset Cliffside Villa", location: "Mykonos, Greece", price: 410, rating: 4.93, capacity: 6, category: "beach", img: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80", coords: "25.3667,37.4467", description: "Cycladic architecture with private terrace pool and iconic sunset views." },
+            { id: 21, name: "Icelandic Volcanic Spa Lodge", location: "Reykjavik, Iceland", price: 270, rating: 4.88, capacity: 4, category: "mountain", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", coords: "-21.9426,64.1466", description: "Geothermal hot spring outdoor tub amidst volcanic lava field wilderness." },
+            { id: 22, name: "Barcelona Gothic Quarter Flat", location: "Barcelona, Spain", price: 185, rating: 4.76, capacity: 4, category: "budget", img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80", coords: "2.1734,41.3851", description: "Historic stone archways combined with vibrant contemporary design." },
+            { id: 23, name: "Sydney Harborfront Suite", location: "Sydney, Australia", price: 350, rating: 4.92, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80", coords: "151.2093,-33.8688", description: "Direct view of Sydney Opera House and Harbor Bridge with glass balcony." },
+            { id: 24, name: "Costa Rican Rainforest Treehouse", location: "Manuel Antonio, Costa Rica", price: 190, rating: 4.95, capacity: 3, category: "budget", img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80", coords: "-84.1507,9.3928", description: "Ecolodge nestled high in jungle canopy populated by toucans and sloths." },
+            { id: 25, name: "Maui Palms Oceanfront Villa", location: "Kihei, Hawaii", price: 330, rating: 4.89, capacity: 5, category: "beach", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", coords: "-156.4678,20.7644", description: "Step from private lawn right onto soft golden sand with ocean breeze." },
+            { id: 26, name: "Black Forest Pine Chalet", location: "Baden-Baden, Germany", price: 215, rating: 4.82, capacity: 4, category: "mountain", img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80", coords: "8.2398,48.7606", description: "Tranquil evergreen forest refuge with wood sauna and hiking trails." },
+            { id: 27, name: "Seoul Gangnam Modern Studio", location: "Seoul, South Korea", price: 145, rating: 4.78, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80", coords: "127.0276,37.4979", description: "High-tech smart apartment located in the bustling center of Gangnam." },
+            { id: 28, name: "Dubai Luxury Tower Suite", location: "Dubai, UAE", price: 480, rating: 4.91, capacity: 4, category: "city", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80", coords: "55.2708,25.2048", description: "Opulent sky residence with marble interiors and infinity pool access." },
+            { id: 29, name: "French Riviera Beachfront Flat", location: "Nice, France", price: 295, rating: 4.85, capacity: 3, category: "beach", img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80", coords: "7.2661,43.7102", description: "Promenade des Anglais apartment with azure Mediterranean views." },
+            { id: 30, name: "Queenstown Lakeview Lodge", location: "Queenstown, New Zealand", price: 360, rating: 4.97, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80", coords: "168.6626,-45.0312", description: "Overlooking Lake Wakatipu with Remarkables mountain peak panorama." },
+            { id: 31, name: "Berlin Industrial Loft", location: "Berlin, Germany", price: 165, rating: 4.72, capacity: 3, category: "budget", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80", coords: "13.4050,52.5200", description: "Trendy Kreuzberg warehouse conversion with high ceilings and local art." },
+            { id: 32, name: "Cape Town Ocean & Mountain Villa", location: "Cape Town, South Africa", price: 260, rating: 4.88, capacity: 5, category: "beach", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", coords: "18.4241,-33.9249", description: "Camps Bay coastal luxury with views of Table Mountain peaks." },
+            { id: 33, name: "Hong Kong Harbour View Apartment", location: "Hong Kong", price: 240, rating: 4.80, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80", coords: "114.1694,22.3193", description: "Iconic Victoria Harbour light show visible right from your bedroom window." },
+            { id: 34, name: "Scottish Highlands Castle Wing", location: "Inverness, Scotland", price: 370, rating: 4.93, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80", coords: "-4.2247,57.4778", description: "Historic 19th-century estate with private loch and stone fireplaces." },
+            { id: 35, name: "Lisbon Historic Terrace Flat", location: "Lisbon, Portugal", price: 155, rating: 4.84, capacity: 3, category: "budget", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80", coords: "-9.1393,38.7223", description: "Alfama district top-floor home with river views and traditional azulejo tiles." },
+            { id: 36, name: "Bora Bora Overwater Bungalow", location: "Bora Bora, French Polynesia", price: 495, rating: 4.99, capacity: 2, category: "beach", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80", coords: "-151.7415,-16.5004", description: "Glass floor viewing lagoon life underneath with direct ocean swim stairs." },
+            { id: 37, name: "Colorado Creek Wooden Cabin", location: "Telluride, Colorado", price: 305, rating: 4.87, capacity: 5, category: "mountain", img: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80", coords: "-107.8123,37.9375", description: "Nestled beside rushing mountain stream with cozy woodburning stove." },
+            { id: 38, name: "Amsterdam Canal View Studio", location: "Amsterdam, Netherlands", price: 230, rating: 4.81, capacity: 2, category: "city", img: "https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=800&q=80", coords: "4.9041,52.3676", description: "17th-century heritage building overlooking peaceful Herengracht canal." },
+            { id: 39, name: "Hanoi Old Quarter Eco Loft", location: "Hanoi, Vietnam", price: 85, rating: 4.90, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80", coords: "105.8342,21.0278", description: "Boutique leafy loft near Hoan Kiem Lake filled with local art and greenery." },
+            { id: 40, name: "Phuket Horizon Pool Villa", location: "Phuket, Thailand", price: 280, rating: 4.86, capacity: 4, category: "beach", img: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80", coords: "98.3981,7.8804", description: "Private cliffside swimming pool with Andaman Sea views and Thai masseuse." },
+            { id: 41, name: "Swiss Lake Geneva Chalet", location: "Montreux, Switzerland", price: 395, rating: 4.94, capacity: 4, category: "mountain", img: "https://images.unsplash.com/photo-1502784444187-359ac186c5bb?auto=format&fit=crop&w=800&q=80", coords: "6.9118,46.4312", description: "Vineyard hill position with glittering lake and snowpeak reflections." },
+            { id: 42, name: "Rome Colosseum View Flat", location: "Rome, Italy", price: 210, rating: 4.77, capacity: 4, category: "city", img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=80", coords: "12.4964,41.9028", description: "Step onto private terrace directly looking over ancient Roman ruins." },
+            { id: 43, name: "Porto Douro River Loft", location: "Porto, Portugal", price: 140, rating: 4.83, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80", coords: "-8.6110,41.1496", description: "Ribeira riverside flat near historic wine cellars and port tasting." },
+            { id: 44, name: "Fiji Private Island Cove", location: "Fiji", price: 470, rating: 4.97, capacity: 4, category: "beach", img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80", coords: "178.0650,-17.7134", description: "Exclusive island villa surrounded by private coral reef and palm trees." },
+            { id: 45, name: "Lake Tahoe Alpine Haven", location: "Tahoe, California", price: 320, rating: 4.89, capacity: 6, category: "mountain", img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80", coords: "-120.0324,39.0968", description: "Pine forest retreat with lake access and private boat launch." },
+            { id: 46, name: "Chicago Loop Skyscraper Flat", location: "Chicago, USA", price: 205, rating: 4.75, capacity: 3, category: "city", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80", coords: "-87.6298,41.8781", description: "Downtown Chicago apartment steps from Millennium Park and Michigan Ave." },
+            { id: 47, name: "Bali Cliffside Ocean Suite", location: "Uluwatu, Indonesia", price: 198, rating: 4.92, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80", coords: "115.0884,-8.8149", description: "Famous surf breaks right below your bedroom cliffside balcony." },
+            { id: 48, name: "Seymour Marine Villa", location: "Sunshine Coast, Australia", price: 315, rating: 4.88, capacity: 5, category: "beach", img: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80", coords: "153.0667,-26.6500", description: "Modern beach house with outdoor barbecue deck and private pool." },
+            { id: 49, name: "Austrian Tyrol Timber Chalet", location: "Innsbruck, Austria", price: 265, rating: 4.85, capacity: 4, category: "mountain", img: "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=800&q=80", coords: "11.4041,47.2692", description: "Traditional Austrian woodworking with mountain bike paths and ski lifts." },
+            { id: 50, name: "Toronto City Center Loft", location: "Toronto, Canada", price: 180, rating: 4.79, capacity: 2, category: "budget", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80", coords: "-79.3832,43.6532", description: "Sleek downtown Toronto apartment with CN Tower views and subway access." }
+        ];
+
+        let properties = [];
+        let favoritesList = JSON.parse(localStorage.getItem('fyp_favorites') || '[]');
+        let compareList = [];
+        let currentBookingHotel = null;
+
+        let selectedStartDate = null;
+        let selectedEndDate = null;
+        const guests = { adults: 0, children: 0 };
+
+        const i18n = {
+            en: {
+                welcome: "Welcome to FindYourPlace!",
+                verifyDesc: "To keep our community safe, please verify you are human before we find your perfect stay.",
+                iAmHuman: "I am human",
+                clickToConfirm: "Click the checkbox to confirm",
+                signIn: "Sign In",
+                signInSub: "Access your friendly booking dashboard",
+                register: "Register",
+                registerSub: "Create an account to start booking",
+                fullName: "Full Name",
+                email: "Email Address",
+                password: "Password",
+                invalidCreds: "Invalid email or password. Please try again.",
+                demoAccess: "Demo Access: guest@fyp.com / password123",
+                createAccount: "Create Account",
+                learnMore: "Learn more about FindYourPlace",
+                testBotCheck: "Test Bot Check Again",
+                where: "Where",
+                searchDest: "Search destinations",
+                when: "When",
+                addDates: "Add dates",
+                who: "Who",
+                addGuests: "Add guests",
+                adults: "Adults",
+                ages13: "Ages 13+",
+                children: "Children",
+                ages2_12: "Ages 2-12",
+                search: "Search",
+                myBookings: "My Bookings",
+                aboutUs: "About Us",
+                preference: "Preference:",
+                allStays: "All Stays",
+                oceanBeach: "Ocean & Beach",
+                mountainLodge: "Mountain Lodge",
+                cityLuxury: "City Luxury",
+                under200: "Under $200",
+                recTopPicks: "Top picks based on your style!",
+                popularHomes: "Popular homes",
+                mapPriceFilter: "Map Price Filter",
+                all: "All",
+                compare: "Compare",
+                addToCompare: "Add to Compare",
+                book: "Book",
+                night: "night",
+                aboutTitle: "About FindYourPlace",
+                aboutSub: "Friendly, Seamless & Transparent Reservations",
+                foundingStoryTitle: "Our Founding Story",
+                foundingStoryP1: "Founded by avid travelers and web architects, FindYourPlace (FYP) was born out of frustration with overly complex booking platforms riddled with hidden charges, misleading photos, and robotic customer service.",
+                foundingStoryP2: "We envisioned a warmer, human-centric alternative where booking a cozy villa in Malibu or an alpine chalet in Aspen feels as delightful as the stay itself.",
+                ourMission: "Our Mission",
+                missionText: "To empower global travelers with effortless discovery, transparent pricing, and instant human verification to ensure safe, memorable stays every time.",
+                ourVision: "Our Vision",
+                visionText: "Building the world's most trusted, accessible, and friendly accommodation ecosystem where every stay feels like coming home.",
+                fypByNumbers: "FYP By The Numbers",
+                curatedStays: "Curated Stays",
+                countries: "Countries",
+                happyGuests: "Happy Guests",
+                avgRating: "Avg Rating",
+                backToExplore: "Back to Explore",
+                myBookingHistory: "My Booking History",
+                bookingHistorySub: "View and manage all your completed hotel reservations.",
+                noBookings: "No bookings recorded yet",
+                noBookingsSub: "Book a stay to see your receipts here!",
+                secureCheckout: "Secure Checkout",
+                checkoutSub: "Complete your payment details securely below.",
+                backToRooms: "Back to rooms",
+                cardHolderName: "Cardholder Name",
+                cardNumber: "Card Number",
+                expiryDate: "Expiry Date",
+                cvc: "CVC",
+                completeBooking: "Complete Secure Booking",
+                bookingSummary: "Booking Summary",
+                serviceFee: "Service Fee",
+                included: "Included",
+                localTaxes: "Local Taxes",
+                totalDue: "Total Due",
+                compareStays: "Compare Stays",
+                compareDesc: "Review your selected properties side-by-side to find your perfect place.",
+                price: "Price",
+                rating: "Rating",
+                capacity: "Capacity",
+                details: "Details",
+                bookThisStay: "Book this stay",
+                upToGuests: "Up to {n} guests"
+            },
+            zh: {
+                welcome: "歡迎來到 FindYourPlace！",
+                verifyDesc: "為了確保社區安全，在為您尋找理想住宿前請先進行真人驗證。",
+                iAmHuman: "我是真人",
+                clickToConfirm: "點擊核取方塊以確認",
+                signIn: "登入",
+                signInSub: "存取您的預訂儀表板",
+                register: "註冊",
+                registerSub: "建立帳戶即可開始預訂",
+                fullName: "全名",
+                email: "電郵地址",
+                password: "密碼",
+                invalidCreds: "電郵或密碼無效，請重試。",
+                demoAccess: "示範帳號: guest@fyp.com / password123",
+                createAccount: "建立帳戶",
+                learnMore: "了解更多關於 FindYourPlace",
+                testBotCheck: "再次測試真人驗證",
+                where: "目的地",
+                searchDest: "搜尋目的地",
+                when: "日期",
+                addDates: "新增日期",
+                who: "人數",
+                addGuests: "新增房客",
+                adults: "成人",
+                ages13: "13 歲以上",
+                children: "兒童",
+                ages2_12: "2-12 歲",
+                search: "搜尋",
+                myBookings: "我的預訂",
+                aboutUs: "關於我們",
+                preference: "偏好選擇：",
+                allStays: "所有房源",
+                oceanBeach: "海景與沙灘",
+                mountainLodge: "高山木屋",
+                cityLuxury: "城市奢華",
+                under200: "200 美元以下",
+                recTopPicks: "根據您的風格推薦最佳選擇！",
+                popularHomes: "熱門房源",
+                mapPriceFilter: "地圖價格篩選",
+                all: "全部",
+                compare: "比較",
+                addToCompare: "加入比較",
+                book: "預訂",
+                night: "晚",
+                aboutTitle: "關於 FindYourPlace",
+                aboutSub: "親切、順暢且透明的預訂體驗",
+                foundingStoryTitle: "我們的品牌故事",
+                foundingStoryP1: "由熱愛旅行的團隊與網頁架構師創立，FindYourPlace (FYP) 源於對繁瑣預訂平台、隱藏收費、誤導照片及機械式客服的不滿。",
+                foundingStoryP2: "我們構想了一個更溫暖、以人為本的選擇，讓預訂馬里布的海邊別墅或阿斯彭的高山木屋就像入住本身一樣令人愉快。",
+                ourMission: "我們的使命",
+                missionText: "賦予全球旅客輕鬆探索、透明價格及即時真人驗證，確保每一次入住都安全且難忘。",
+                ourVision: "我們的願景",
+                visionText: "打造全球最值得信賴、便利且友善的住宿生態系統，讓每一次住宿都像回到家一樣。",
+                fypByNumbers: "FYP 數據一覽",
+                curatedStays: "精選房源",
+                countries: "覆蓋國家",
+                happyGuests: "滿意房客",
+                avgRating: "平均評分",
+                backToExplore: "返回探索",
+                myBookingHistory: "我的預訂紀錄",
+                bookingHistorySub: "查看並管理您所有已完成的酒店預訂。",
+                noBookings: "暫無預訂紀錄",
+                noBookingsSub: "立即預訂住宿，在此查看您的收據！",
+                secureCheckout: "安全結帳",
+                checkoutSub: "請在下方安全地填寫您的付款資料。",
+                backToRooms: "返回房源",
+                cardHolderName: "持卡人姓名",
+                cardNumber: "卡號",
+                expiryDate: "有效期限",
+                cvc: "安全碼 (CVC)",
+                completeBooking: "完成安全預訂",
+                bookingSummary: "預訂摘要",
+                serviceFee: "服務費",
+                included: "已包含",
+                localTaxes: "當地稅項",
+                totalDue: "總金額",
+                compareStays: "房源比較",
+                compareDesc: "並排比較您選擇的房源，找到最適合您的落腳處。",
+                price: "價格",
+                rating: "評分",
+                capacity: "容納人數",
+                details: "詳細資訊",
+                bookThisStay: "預訂此房源",
+                upToGuests: "最多 {n} 位房客"
+            },
+            es: {
+                welcome: "¡Bienvenido a FindYourPlace!",
+                verifyDesc: "Para mantener nuestra comunidad segura, verifique que es humano.",
+                iAmHuman: "Soy humano",
+                clickToConfirm: "Haga clic en la casilla para confirmar",
+                signIn: "Iniciar sesión",
+                signInSub: "Acceda a su panel de reservas",
+                register: "Registrarse",
+                registerSub: "Cree una cuenta para comenzar a reservar",
+                fullName: "Nombre completo",
+                email: "Correo electrónico",
+                password: "Contraseña",
+                invalidCreds: "Correo o contraseña no válidos. Inténtelo de nuevo.",
+                demoAccess: "Acceso Demo: guest@fyp.com / password123",
+                createAccount: "Crear cuenta",
+                learnMore: "Más información sobre FindYourPlace",
+                testBotCheck: "Probar verificación de bot",
+                where: "Dónde",
+                searchDest: "Buscar destinos",
+                when: "Cuándo",
+                addDates: "Añadir fechas",
+                who: "Quién",
+                addGuests: "Añadir huéspedes",
+                adults: "Adultos",
+                ages13: "13+ años",
+                children: "Niños",
+                ages2_12: "2-12 años",
+                search: "Buscar",
+                myBookings: "Mis reservas",
+                aboutUs: "Nosotros",
+                preference: "Preferencia:",
+                allStays: "Todos los alojamientos",
+                oceanBeach: "Océano y playa",
+                mountainLodge: "Refugio de montaña",
+                cityLuxury: "Lujo urbano",
+                under200: "Menos de $200",
+                recTopPicks: "¡Mejores opciones según tu estilo!",
+                popularHomes: "Alojamiento popular",
+                mapPriceFilter: "Filtro de precio en mapa",
+                all: "Todos",
+                compare: "Comparar",
+                addToCompare: "Añadir a comparar",
+                book: "Reservar",
+                night: "noche",
+                aboutTitle: "Acerca de FindYourPlace",
+                aboutSub: "Reservas amigables, fluidas y transparentes",
+                foundingStoryTitle: "Nuestra historia",
+                foundingStoryP1: "Fundado por viajeros apasionados y arquitectos web, FindYourPlace (FYP) nació de la frustración con plataformas complejas y costes ocultos.",
+                foundingStoryP2: "Imaginamos una alternativa más humana donde reservar una villa acogedora sea igual de encantador que la estancia.",
+                ourMission: "Nuestra Misión",
+                missionText: "Empoderar a viajeros globales con descubrimiento sencillo, precios transparentes y verificación instantánea.",
+                ourVision: "Nuestra Visión",
+                visionText: "Construir el ecosistema de alojamiento más confiable y amigable del mundo donde cada estancia se sienta como en casa.",
+                fypByNumbers: "FYP en números",
+                curatedStays: "Propiedades",
+                countries: "Países",
+                happyGuests: "Huéspedes felices",
+                avgRating: "Valoración media",
+                backToExplore: "Volver a explorar",
+                myBookingHistory: "Mi historial de reservas",
+                bookingHistorySub: "Vea y gestione todas sus reservas completadas.",
+                noBookings: "Sin reservas registradas",
+                noBookingsSub: "¡Reserve un alojamiento para ver sus recibos aquí!",
+                secureCheckout: "Pago seguro",
+                checkoutSub: "Complete sus datos de pago de forma segura a continuación.",
+                backToRooms: "Volver a alojamientos",
+                cardHolderName: "Nombre del titular",
+                cardNumber: "Número de tarjeta",
+                expiryDate: "Fecha de caducidad",
+                cvc: "CVC",
+                completeBooking: "Completar reserva segura",
+                bookingSummary: "Resumen de reserva",
+                serviceFee: "Tarifa de servicio",
+                included: "Incluida",
+                localTaxes: "Impuestos locales",
+                totalDue: "Total a pagar",
+                compareStays: "Comparar alojamientos",
+                compareDesc: "Compare sus propiedades seleccionadas lado a lado.",
+                price: "Precio",
+                rating: "Valoración",
+                capacity: "Capacidad",
+                details: "Detalles",
+                bookThisStay: "Reservar este alojamiento",
+                upToGuests: "Hasta {n} huéspedes"
+            }
+        };
+
+        function showingAllProps(count) {
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            if (lang === 'zh') return `顯示 ${count} 間精選房源`;
+            if (lang === 'es') return `Mostrando ${count} propiedades seleccionadas`;
+            return `Showing ${count} available handpicked properties`;
+        }
+
+        function showingMatchingProps(count) {
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            if (lang === 'zh') return `顯示 ${count} 間符合條件的房源`;
+            if (lang === 'es') return `Mostrando ${count} propiedades coincidentes`;
+            return `Showing ${count} matching stays`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('fyp_theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                updateThemeIcon(true);
+            }
+
+            const savedFontSize = localStorage.getItem('fyp_fontSize') || 'medium';
+            setFontSize(savedFontSize, false);
+            document.getElementById('fontSizeSelect').value = savedFontSize;
+
+            const savedLang = localStorage.getItem('fyp_lang') || 'en';
+            setLanguage(savedLang, false);
+            document.getElementById('langSelect').value = savedLang;
+
+            updateBookingBadge();
+
+            const isVerified = sessionStorage.getItem('fyp_verified') === 'true';
+            const isLoggedIn = localStorage.getItem('fyp_loggedIn') === 'true';
+
+            if (isLoggedIn) {
+                document.getElementById('botVerification').style.display = 'none';
+                document.getElementById('loginPage').classList.replace('flex', 'hidden');
+                document.getElementById('mainApp').classList.replace('hidden', 'flex');
+                
+                const savedName = localStorage.getItem('fyp_user_name') || "Guest";
+                document.getElementById('userBadge').innerText = savedName.charAt(0).toUpperCase();
+                initProperties();
+            } else if (isVerified) {
+                document.getElementById('botVerification').style.display = 'none';
+                document.getElementById('loginPage').classList.remove('hidden');
+                document.getElementById('loginPage').classList.add('flex');
+            } else {
+                resetBotVerificationUI();
+                document.getElementById('botVerification').style.display = 'flex';
+            }
+        });
+
+        async function initProperties() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1000);
+                const response = await fetch('http://localhost:3000/api/properties', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    properties = await response.json();
+                } else {
+                    properties = [...defaultProperties];
+                }
+            } catch (err) {
+                properties = [...defaultProperties];
+            }
+            renderCards(properties);
+            setViewState(false);
+            
+            const metaEl = document.getElementById('searchMeta');
+            if (metaEl) metaEl.innerText = showingAllProps(properties.length);
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('fyp_theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+            renderCards(properties);
+        }
+
+        function updateThemeIcon(isDark) {
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = isDark ? 'fa-solid fa-sun text-yellow-400' : 'fa-solid fa-moon text-slate-600';
+            }
+        }
+
+        function changeFontSize(size) {
+            setFontSize(size, true);
+        }
+
+        function setFontSize(size, save = true) {
+            let rootSize = '16px';
+            if (size === 'small') rootSize = '14px';
+            if (size === 'large') rootSize = '18px';
+            document.documentElement.style.fontSize = rootSize;
+            if (save) localStorage.setItem('fyp_fontSize', size);
+        }
+
+        function changeLanguage(lang) {
+            setLanguage(lang, true);
+        }
+
+        function setLanguage(lang, save = true) {
+            if (!i18n[lang]) lang = 'en';
+            if (save) localStorage.setItem('fyp_lang', lang);
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang] && i18n[lang][key]) el.innerText = i18n[lang][key];
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[lang] && i18n[lang][key]) el.placeholder = i18n[lang][key];
+            });
+
+            const metaEl = document.getElementById('searchMeta');
+            if (metaEl) {
+                metaEl.innerText = showingAllProps(properties.length > 0 ? properties.length : 50);
+            }
+
+            if (properties && properties.length > 0) {
+                renderCards(properties);
+            }
+
+            updateGuestDisplay();
+
+            const activeTabIsLogin = !document.getElementById('loginForm')?.classList.contains('hidden');
+            switchAuthTab(activeTabIsLogin ? 'login' : 'register');
+        }
+
+        let isVerifying = false;
+
+        function resetBotVerificationUI() {
+            isVerifying = false;
+            const box = document.getElementById('verifyCheckbox');
+            const label = document.getElementById('verifyLabel');
+            const statusText = document.getElementById('verifyStatusText');
+            
+            if (box) {
+                box.className = "w-9 h-9 border-2 border-slate-300 rounded-xl bg-white group-hover:border-brand flex items-center justify-center transition-all shadow-sm";
+                box.innerHTML = '';
+            }
+            if (label) {
+                label.innerText = i18n[localStorage.getItem('fyp_lang') || 'en']?.iAmHuman || "I am human";
+                label.className = "font-bold text-slate-700 text-sm group-hover:text-brand-dark transition";
+            }
+            if (statusText) {
+                statusText.innerText = i18n[localStorage.getItem('fyp_lang') || 'en']?.clickToConfirm || "Click the checkbox to confirm";
+                statusText.className = "mt-4 text-xs font-semibold text-slate-400 min-h-[18px]";
+            }
+        }
+
+        function resetBotVerification() {
+            sessionStorage.removeItem('fyp_verified');
+            resetBotVerificationUI();
+            
+            const botScreen = document.getElementById('botVerification');
+            botScreen.style.opacity = '1';
+            botScreen.style.display = 'flex';
+
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('flex');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('flex');
+        }
+
+        function verifyHuman() {
+            if (isVerifying) return;
+            isVerifying = true;
+
+            const box = document.getElementById('verifyCheckbox');
+            const label = document.getElementById('verifyLabel');
+            const statusText = document.getElementById('verifyStatusText');
+
+            box.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-brand text-lg"></i>`;
+            box.classList.add('border-brand');
+            statusText.innerText = "Verifying security token...";
+
+            setTimeout(() => {
+                box.className = "w-9 h-9 rounded-xl bg-emerald-500 border-2 border-emerald-500 flex items-center justify-center text-white shadow-md transition-all duration-300";
+                box.innerHTML = `<i class="fa-solid fa-check text-lg animate-tick"></i>`;
+                
+                label.innerText = "Verification Complete!";
+                label.className = "font-bold text-emerald-700 text-sm transition";
+                statusText.innerText = "Human verified successfully ✓";
+                statusText.className = "mt-4 text-xs font-bold text-emerald-600 min-h-[18px]";
+
+                setTimeout(() => {
+                    sessionStorage.setItem('fyp_verified', 'true');
+                    const botScreen = document.getElementById('botVerification');
+                    const loginPage = document.getElementById('loginPage');
+                    
+                    botScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        botScreen.style.display = 'none';
+                        loginPage.classList.remove('hidden');
+                        loginPage.classList.add('flex');
+                    }, 400);
+                }, 800);
+            }, 700);
+        }
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabSignIn = document.getElementById('tabSignIn');
+            const tabRegister = document.getElementById('tabRegister');
+            const authTitle = document.getElementById('authTitle');
+            const authSubtitle = document.getElementById('authSubtitle');
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabSignIn.className = "flex-1 py-2 border-b-2 border-brand text-brand font-bold transition cursor-pointer";
+                tabRegister.className = "flex-1 py-2 border-b-2 border-transparent text-slate-500 hover:text-brand font-bold transition cursor-pointer";
+                if (authTitle) authTitle.innerText = i18n[lang]?.signIn || "Sign In";
+                if (authSubtitle) authSubtitle.innerText = i18n[lang]?.signInSub || "Access your friendly booking dashboard";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabRegister.className = "flex-1 py-2 border-b-2 border-brand text-brand font-bold transition cursor-pointer";
+                tabSignIn.className = "flex-1 py-2 border-b-2 border-transparent text-slate-500 hover:text-brand font-bold transition cursor-pointer";
+                if (authTitle) authTitle.innerText = i18n[lang]?.register || "Register";
+                if (authSubtitle) authSubtitle.innerText = i18n[lang]?.registerSub || "Create an account to start booking";
+            }
+        }
+
+        function handleLogin(event) {
+            if (event) event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            const users = JSON.parse(localStorage.getItem('fyp_users') || '[]');
+            const isDemo = (email.toLowerCase() === "guest@fyp.com" && password === "password123");
+            const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+
+            if (isDemo || foundUser) {
+                if (errorDiv) errorDiv.classList.add('hidden');
+                localStorage.setItem('fyp_loggedIn', 'true');
+                
+                const userName = isDemo ? "Guest" : (foundUser.name || email.split('@')[0]);
+                localStorage.setItem('fyp_user_name', userName);
+                
+                const badge = document.getElementById('userBadge');
+                if (badge) badge.innerText = userName.charAt(0).toUpperCase();
+                
+                document.getElementById('loginPage').classList.replace('flex', 'hidden');
+                document.getElementById('mainApp').classList.replace('hidden', 'flex');
+                
+                initProperties();
+            } else {
+                if (errorDiv) errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function handleRegister(event) {
+            if (event) event.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const errorDiv = document.getElementById('registerError');
+            const successDiv = document.getElementById('registerSuccess');
+
+            if (errorDiv) errorDiv.classList.add('hidden');
+            if (successDiv) successDiv.classList.add('hidden');
+
+            if (!name || !email || !password) {
+                if (errorDiv) {
+                    errorDiv.innerText = "Please fill in all fields.";
+                    errorDiv.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (password.length < 6) {
+                if (errorDiv) {
+                    errorDiv.innerText = "Password must be at least 6 characters long.";
+                    errorDiv.classList.remove('hidden');
+                }
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('fyp_users') || '[]');
+            if (email.toLowerCase() === "guest@fyp.com" || users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                if (errorDiv) {
+                    errorDiv.innerText = "An account with this email already exists.";
+                    errorDiv.classList.remove('hidden');
+                }
+                return;
+            }
+
+            users.push({ name, email, password });
+            localStorage.setItem('fyp_users', JSON.stringify(users));
+
+            if (successDiv) {
+                successDiv.innerText = "Account created successfully! Logging you in...";
+                successDiv.classList.remove('hidden');
+            }
+
+            setTimeout(() => {
+                localStorage.setItem('fyp_loggedIn', 'true');
+                localStorage.setItem('fyp_user_name', name);
+                
+                const badge = document.getElementById('userBadge');
+                if (badge) badge.innerText = name.charAt(0).toUpperCase();
+
+                document.getElementById('loginPage').classList.replace('flex', 'hidden');
+                document.getElementById('mainApp').classList.replace('hidden', 'flex');
+
+                initProperties();
+            }, 800);
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('fyp_loggedIn');
+            localStorage.removeItem('fyp_user_name');
+            sessionStorage.removeItem('fyp_verified');
+            location.reload();
+        }
+
+        function openAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.addEventListener('click', function(e) {
+            if(!e.target.closest('#locInput') && !e.target.closest('#autocompleteDropdown')) {
+                document.getElementById('autocompleteDropdown')?.classList.add('hidden');
+            }
+            if(!e.target.closest('#dateSelectorBtn') && !e.target.closest('#dateDropdown')) {
+                document.getElementById('dateDropdown')?.classList.add('hidden');
+            }
+            if(!e.target.closest('#guestSelectorBtn') && !e.target.closest('#guestDropdown')) {
+                document.getElementById('guestDropdown')?.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('dateSelectorBtn').addEventListener('click', function(e) {
+            if (e.target.closest('#dateDropdown')) return;
+            e.stopPropagation();
+            document.getElementById('dateDropdown').classList.toggle('hidden');
+            document.getElementById('guestDropdown').classList.add('hidden');
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            if(document.getElementById('calendarContainer').innerHTML.trim() === '') {
+                renderDualCalendar();
+            }
+        });
+
+        document.getElementById('guestSelectorBtn').addEventListener('click', function(e) {
+            if (e.target.closest('#guestDropdown')) return;
+            e.stopPropagation();
+            document.getElementById('guestDropdown').classList.toggle('hidden');
+            document.getElementById('dateDropdown').classList.add('hidden');
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            updateGuestDisplay(); 
+        });
+
+        function updateGuest(type, change) {
+            if (guests[type] + change < 0) return;
+            if (change > 0 && type !== 'adults' && guests.adults === 0) {
+                guests.adults = 1;
+                document.getElementById('count-adults').innerText = guests.adults;
+            }
+            guests[type] += change;
+            document.getElementById(`count-${type}`).innerText = guests[type];
+            updateGuestDisplay();
+        }
+
+        function updateGuestDisplay() {
+            const total = guests.adults + guests.children;
+            const display = document.getElementById('guestDisplay');
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            const guestWord = lang === 'zh' ? '位房客' : (lang === 'es' ? 'huésped(es)' : (total > 1 ? 'guests' : 'guest'));
+            
+            display.innerText = total > 0 ? `${total} ${guestWord}` : (i18n[lang]?.addGuests || "Add guests");
+            display.classList.toggle('text-slate-800', total > 0);
+            display.classList.toggle('font-semibold', total > 0);
+        }
+
+        function renderDualCalendar() {
+            const container = document.getElementById('calendarContainer');
+            container.innerHTML = generateMonthLayout("May 2026", "May", 31, 5) + generateMonthLayout("June 2026", "June", 30, 1);
+            highlightSelectedDates();
+        }
+
+        function generateMonthLayout(title, monthName, days, emptyStart) {
+            let html = `<div class="flex-1">
+                <h3 class="text-center font-bold text-slate-800 mb-4 text-sm">${title}</h3>
+                <div class="grid grid-cols-7 gap-y-2 text-center text-xs font-semibold text-slate-400 mb-2">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+                <div class="grid grid-cols-7 gap-y-1 text-center text-xs font-semibold text-slate-700">`;
+            for(let i = 0; i < emptyStart; i++) html += `<div></div>`;
+            for(let i = 1; i <= days; i++) {
+                const dateKey = `${monthName} ${i}, 2026`;
+                html += `<div class="flex items-center justify-center h-8 w-full">
+                            <button type="button" class="date-btn w-8 h-8 rounded-full border border-transparent hover:border-slate-800 flex items-center justify-center cursor-pointer transition text-xs font-semibold" data-date="${dateKey}" onclick="selectDate(this, '${monthName}', ${i})">${i}</button>
+                         </div>`;
+            }
+            html += `</div></div>`;
+            return html;
+        }
+
+        function selectDate(btn, month, day) {
+            const fullDate = `${month} ${day}`;
+            
+            if (!selectedStartDate || (selectedStartDate && selectedEndDate)) {
+                selectedStartDate = fullDate;
+                selectedEndDate = null;
+            } else {
+                selectedEndDate = fullDate;
+            }
+
+            highlightSelectedDates();
+
+            const display = document.getElementById('dateDisplay');
+            if (selectedEndDate) {
+                display.innerText = `${selectedStartDate} - ${selectedEndDate}`;
+                setTimeout(() => {
+                    document.getElementById('dateDropdown')?.classList.add('hidden');
+                }, 350);
+            } else {
+                display.innerText = selectedStartDate;
+            }
+            
+            display.classList.add('text-slate-800', 'font-semibold');
+            display.classList.remove('text-slate-600');
+        }
+
+        function highlightSelectedDates() {
+            const dateBtns = document.querySelectorAll('.date-btn');
+            dateBtns.forEach(b => {
+                const d = b.getAttribute('data-date');
+                if (d) {
+                    const shortDate = d.replace(', 2026', '');
+                    if (shortDate === selectedStartDate || shortDate === selectedEndDate) {
+                        b.className = "date-btn w-8 h-8 rounded-full bg-brand text-white font-bold flex items-center justify-center cursor-pointer shadow-md";
+                    } else {
+                        b.className = "date-btn w-8 h-8 rounded-full border border-transparent hover:border-slate-800 flex items-center justify-center cursor-pointer transition text-xs font-semibold";
+                    }
+                }
+            });
+        }
+
+        function setViewState(isSearchMode) {
+            const gridContainer = document.getElementById('gridContainer');
+            const mapContainer = document.getElementById('mapContainer');
+            const hotelGrid = document.getElementById('hotelGrid');
+
+            if (isSearchMode) {
+                gridContainer.className = "w-full lg:w-[60%] xl:w-[55%] h-full overflow-y-auto custom-scrollbar p-6 bg-slate-50 transition-all duration-300";
+                mapContainer.className = "hidden lg:block lg:w-[40%] xl:w-[45%] h-full bg-slate-200 relative transition-all duration-300 border-l border-slate-200";
+                hotelGrid.className = "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-20";
+            } else {
+                gridContainer.className = "w-full h-full overflow-y-auto custom-scrollbar p-6 bg-slate-50 transition-all duration-300";
+                mapContainer.className = "hidden h-full bg-slate-200 relative transition-all duration-300 border-l border-slate-200";
+                hotelGrid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-20";
+            }
+        }
+
+        function renderCards(data) {
+            const grid = document.getElementById('hotelGrid');
+            grid.innerHTML = ''; 
+            
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-sm mt-4">
+                    <h3 class="text-lg font-bold text-slate-700">No places match your criteria</h3>
+                </div>`;
+                return;
+            }
+
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            const bookText = i18n[lang]?.book || 'Book';
+            const nightText = i18n[lang]?.night || 'night';
+            const compareText = i18n[lang]?.addToCompare || 'Add to Compare';
+
+            data.forEach(prop => {
+                const isChecked = compareList.some(p => p.id === prop.id) ? 'checked' : '';
+                const isFav = favoritesList.includes(prop.id);
+                const heartClass = isFav ? "fa-solid text-rose-500 scale-110" : "fa-regular text-white";
+                
+                const card = `
+                    <div class="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 flex flex-col h-full relative">
+                        <div class="relative h-48 w-full overflow-hidden cursor-pointer" onclick="updateMap('${prop.coords}')">
+                            <img src="${prop.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">
+                            <button onclick="toggleFavorite(event, ${prop.id})" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition active:scale-95 z-10 cursor-pointer">
+                                <i id="fav-icon-${prop.id}" class="${heartClass} fa-heart text-lg drop-shadow-md transition-all duration-200"></i>
+                            </button>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div class="cursor-pointer" onclick="updateMap('${prop.coords}')">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-bold text-slate-800 text-base leading-tight truncate pr-2">${prop.name}</h4>
+                                    <div class="flex items-center gap-1 font-semibold text-sm text-slate-700 shrink-0">
+                                        <i class="fa-solid fa-star text-xs text-yellow-400"></i> ${prop.rating}
+                                    </div>
+                                </div>
+                                <p class="text-slate-500 text-sm mb-4 line-clamp-1">${prop.location}</p>
+                            </div>
+                            
+                            <div class="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
+                                <div>
+                                    <span class="text-slate-900 font-bold text-base">$${prop.price}</span>
+                                    <span class="text-slate-500 text-sm"> / ${nightText}</span>
+                                </div>
+                                <button onclick="openPayment(${prop.id})" class="bg-brand text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-brand-dark transition shadow-md cursor-pointer">${bookText}</button>
+                            </div>
+                            
+                            <div class="mt-3 bg-slate-50 rounded-lg p-2 flex items-center justify-center border border-slate-100">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer hover:text-brand transition w-full justify-center">
+                                    <input type="checkbox" onchange="handleCompareToggle(${prop.id}, this)" ${isChecked} class="w-4 h-4 accent-brand cursor-pointer rounded"> 
+                                    ${compareText}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        function toggleFavorite(e, propId) {
+            e.stopPropagation();
+            const icon = document.getElementById(`fav-icon-${propId}`);
+            if (favoritesList.includes(propId)) {
+                favoritesList = favoritesList.filter(id => id !== propId);
+                if(icon) {
+                    icon.className = "fa-regular text-white fa-heart text-lg drop-shadow-md transition-all duration-200";
+                }
+            } else {
+                favoritesList.push(propId);
+                if(icon) {
+                    icon.className = "fa-solid text-rose-500 scale-110 fa-heart text-lg drop-shadow-md transition-all duration-200";
+                }
+            }
+            localStorage.setItem('fyp_favorites', JSON.stringify(favoritesList));
+        }
+
+        function filterByPreference(prefCategory) {
+            document.querySelectorAll('.pref-btn').forEach(btn => {
+                btn.className = "pref-btn bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap";
+            });
+
+            const activeBtn = document.getElementById(`pref-${prefCategory}`);
+            if (activeBtn) {
+                activeBtn.className = "pref-btn bg-brand text-white text-xs px-3.5 py-1.5 rounded-full font-semibold transition cursor-pointer whitespace-nowrap";
+            }
+
+            const recBanner = document.getElementById('recommendationBanner');
+            const recText = document.getElementById('recText');
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+
+            if (prefCategory === 'all') {
+                recBanner.classList.add('hidden');
+                document.getElementById('searchMeta').innerText = showingAllProps(properties.length);
+                renderCards(properties);
+                return;
+            }
+
+            let filtered = [];
+            if (prefCategory === 'budget') {
+                filtered = properties.filter(p => p.price <= 200);
+                if (lang === 'zh') recText.innerText = "已選取 200 美元以下的精選房源！";
+                else if (lang === 'es') recText.innerText = "¡Alojamientos económicos de menos de $200 seleccionados!";
+                else recText.innerText = "Budget friendly stays under $200 selected!";
+            } else {
+                filtered = properties.filter(p => p.category === prefCategory);
+                if (lang === 'zh') recText.innerText = "已為您推薦專屬特色房源！";
+                else if (lang === 'es') recText.innerText = "¡Alojamientos recomendados según tu estilo!";
+                else recText.innerText = `Recommended ${prefCategory} stays personalized for you!`;
+            }
+
+            document.getElementById('searchMeta').innerText = showingMatchingProps(filtered.length);
+            recBanner.classList.remove('hidden');
+            renderCards(filtered);
+        }
+
+        function handleMapPriceFilter(maxPrice) {
+            document.getElementById('mapPriceVal').innerText = `Max: $${maxPrice}`;
+            const filtered = properties.filter(p => p.price <= maxPrice);
+            renderCards(filtered);
+        }
+
+        function setMapPricePreset(minPrice, maxPrice) {
+            document.getElementById('mapPriceSlider').value = maxPrice;
+            document.getElementById('mapPriceVal').innerText = maxPrice === 500 ? `Max: $500` : `$${minPrice} - $${maxPrice}`;
+            const filtered = properties.filter(p => p.price >= minPrice && p.price <= maxPrice);
+            renderCards(filtered);
+        }
+
+        function searchPlaces() {
+            document.getElementById('dateDropdown').classList.add('hidden');
+            document.getElementById('guestDropdown').classList.add('hidden');
+            
+            const locQuery = document.getElementById('locInput').value.toLowerCase().trim();
+            const requestedGuests = guests.adults + guests.children;
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            
+            const filtered = properties.filter(p => {
+                const matchesLoc = locQuery === "" || p.location.toLowerCase().includes(locQuery) || p.name.toLowerCase().includes(locQuery);
+                const matchesCapacity = requestedGuests === 0 || p.capacity >= requestedGuests;
+                return matchesLoc && matchesCapacity;
+            });
+            
+            if (locQuery) {
+                if (lang === 'zh') document.getElementById('resultsTitle').innerText = `${locQuery} 的房源`;
+                else if (lang === 'es') document.getElementById('resultsTitle').innerText = `Alojamientos en ${locQuery}`;
+                else document.getElementById('resultsTitle').innerText = `Stays in ${locQuery}`;
+            } else {
+                document.getElementById('resultsTitle').innerText = i18n[lang]?.popularHomes || 'Popular homes';
+            }
+
+            document.getElementById('searchMeta').innerText = showingMatchingProps(filtered.length);
+            renderCards(filtered);
+            setViewState(true);
+
+            if (filtered.length > 0) {
+                updateMap(filtered[0].coords);
+            }
+        }
+
+        function resetSearch() {
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            document.getElementById('locInput').value = '';
+            document.getElementById('dateDisplay').innerText = i18n[lang]?.addDates || 'Add dates';
+            selectedStartDate = null;
+            selectedEndDate = null;
+            guests.adults = 0; guests.children = 0;
+            updateGuestDisplay();
+            document.getElementById('resultsTitle').innerText = i18n[lang]?.popularHomes || "Popular homes";
+            document.getElementById('searchMeta').innerText = showingAllProps(properties.length > 0 ? properties.length : 50);
+            renderCards(properties);
+            setViewState(false); 
+        }
+
+        function updateMap(coordsString) {
+            setViewState(true);
+            const [lon, lat] = coordsString.split(',').map(Number);
+            const offset = 0.02; 
+            const bbox = `${lon - offset},${lat - offset},${lon + offset},${lat + offset}`;
+            document.getElementById('mapFrame').src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
+        }
+
+        function showSuggestions(val) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+            dropdown.innerHTML = '';
+            if (!val) return dropdown.classList.add('hidden');
+
+            const uniqueLocations = [...new Set(properties.map(p => p.location))];
+            const matches = uniqueLocations.filter(loc => loc.toLowerCase().includes(val.toLowerCase()));
+
+            if (matches.length > 0) {
+                dropdown.classList.remove('hidden');
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = "px-6 py-3 hover:bg-slate-100 cursor-pointer text-sm text-slate-700 flex items-center gap-3 transition font-semibold";
+                    div.innerHTML = `<i class="fa-solid fa-location-dot text-slate-400"></i> ${match}`;
+                    div.onclick = () => {
+                        document.getElementById('locInput').value = match;
+                        dropdown.classList.add('hidden');
+                    };
+                    dropdown.appendChild(div);
+                });
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        function formatCardNumber(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = value.substring(0, 16);
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+            input.value = formatted;
+        }
+
+        function formatExpiry(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length >= 3) {
+                input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            } else {
+                input.value = value;
+            }
+        }
+
+        function openPayment(hotelId) {
+            const hotel = properties.find(p => p.id === hotelId);
+            if (!hotel) return;
+
+            currentBookingHotel = hotel;
+            document.getElementById('paymentHotelName').innerText = hotel.name;
+            document.getElementById('paymentHotelLoc').innerText = hotel.location;
+            document.getElementById('paymentTotal').innerText = `$${hotel.price}`;
+            document.getElementById('paymentHotelImg').src = hotel.img;
+            document.getElementById('paymentError').classList.add('hidden');
+            
+            document.getElementById('mainApp').classList.replace('flex', 'hidden');
+            document.getElementById('paymentPage').classList.remove('hidden');
+        }
+
+        function closePayment() {
+            document.getElementById('paymentPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.replace('hidden', 'flex');
+        }
+
+        function processPayment(event) {
+            event.preventDefault(); 
+            const errorDiv = document.getElementById('paymentError');
+            errorDiv.classList.add('hidden');
+            errorDiv.innerText = '';
+
+            const name = document.getElementById('cardHolderName').value.trim();
+            const cardNum = document.getElementById('cardNumber').value.replace(/\s/g, '');
+            const expiry = document.getElementById('cardExpiry').value.trim();
+            const cvc = document.getElementById('cardCVC').value.trim();
+
+            if (!/^[A-Za-z\s]{2,}$/.test(name)) {
+                errorDiv.innerText = "Please enter a valid cardholder name (letters only).";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!/^\d{16}$/.test(cardNum)) {
+                errorDiv.innerText = "Please enter a valid 16-digit credit card number.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            const expiryMatch = expiry.match(/^(0[1-9]|1[0-2])\/(\d{2})$/);
+            if (!expiryMatch) {
+                errorDiv.innerText = "Please enter a valid expiry date in MM/YY format.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            const month = parseInt(expiryMatch[1], 10);
+            const year = parseInt("20" + expiryMatch[2], 10);
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+
+            if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                errorDiv.innerText = "The card expiry date has already passed.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!/^\d{3,4}$/.test(cvc)) {
+                errorDiv.innerText = "Please enter a valid 3 or 4-digit CVC code.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('payButton');
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...`;
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Reservation Complete!`;
+                saveBookingRecord(currentBookingHotel);
+
+                setTimeout(() => {
+                    closePayment();
+                    btn.innerHTML = `<i class="fa-solid fa-lock text-sm"></i> Complete Secure Booking`;
+                    btn.disabled = false;
+                    event.target.reset();
+                    openBookingHistoryModal();
+                }, 1200);
+            }, 1200);
+        }
+
+        function saveBookingRecord(hotel) {
+            if (!hotel) return;
+            const records = JSON.parse(localStorage.getItem('fyp_bookings') || '[]');
+            const newRecord = {
+                id: 'FYP-' + Math.floor(100000 + Math.random() * 900000),
+                hotelName: hotel.name,
+                hotelImg: hotel.img,
+                location: hotel.location,
+                price: hotel.price,
+                dateBooked: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                status: 'Confirmed'
+            };
+            records.unshift(newRecord);
+            localStorage.setItem('fyp_bookings', JSON.stringify(records));
+            updateBookingBadge();
+        }
+
+        function updateBookingBadge() {
+            const records = JSON.parse(localStorage.getItem('fyp_bookings') || '[]');
+            const badge = document.getElementById('bookingBadgeCount');
+            if (badge) badge.innerText = records.length;
+        }
+
+        function openBookingHistoryModal() {
+            const modal = document.getElementById('bookingHistoryModal');
+            const listContainer = document.getElementById('bookingList');
+            const records = JSON.parse(localStorage.getItem('fyp_bookings') || '[]');
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+
+            if (records.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100">
+                        <i class="fa-solid fa-calendar-xmark text-3xl text-slate-300 mb-2"></i>
+                        <p class="font-bold text-slate-600 text-sm">${i18n[lang]?.noBookings || "No bookings recorded yet"}</p>
+                        <p class="text-xs text-slate-400 mt-1">${i18n[lang]?.noBookingsSub || "Book a stay to see your receipts here!"}</p>
+                    </div>`;
+            } else {
+                listContainer.innerHTML = records.map(rec => `
+                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-brand/30 transition">
+                        <img src="${rec.hotelImg}" class="w-16 h-16 object-cover rounded-xl shrink-0">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-slate-800 text-sm">${rec.hotelName}</h4>
+                                <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md">${rec.status}</span>
+                            </div>
+                            <p class="text-xs text-slate-500">${rec.location}</p>
+                            <div class="flex items-center justify-between mt-2 text-xs">
+                                <span class="text-slate-400">Booked: ${rec.dateBooked}</span>
+                                <span class="font-bold text-brand-dark">$${rec.price}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeBookingHistoryModal() {
+            const modal = document.getElementById('bookingHistoryModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function handleCompareToggle(hotelId, checkbox) {
+            if (checkbox.checked) {
+                if (compareList.length >= 4) {
+                    alert("You can compare up to 4 properties at a time.");
+                    checkbox.checked = false;
+                    return;
+                }
+                const property = properties.find(p => p.id === hotelId);
+                if (property && !compareList.some(p => p.id === hotelId)) {
+                    compareList.push(property);
+                }
+            } else {
+                compareList = compareList.filter(p => p.id !== hotelId);
+            }
+            updateCompareButtonState();
+        }
+
+        function updateCompareButtonState() {
+            const btn = document.getElementById('compareFloatBtn');
+            const count = document.getElementById('compareCount');
+            count.innerText = compareList.length;
+            
+            if (compareList.length > 0) {
+                btn.classList.remove('hidden');
+                btn.classList.add('flex');
+            } else {
+                btn.classList.add('hidden');
+                btn.classList.remove('flex');
+            }
+        }
+
+        function showCompareModal() {
+            const modal = document.getElementById('compareModal');
+            const grid = document.getElementById('compareGrid');
+            const lang = localStorage.getItem('fyp_lang') || 'en';
+            
+            grid.innerHTML = compareList.map(prop => {
+                const priceLabel = i18n[lang]?.price || "Price";
+                const ratingLabel = i18n[lang]?.rating || "Rating";
+                const capLabel = i18n[lang]?.capacity || "Capacity";
+                const detailsLabel = i18n[lang]?.details || "Details";
+                const bookBtnText = i18n[lang]?.bookThisStay || "Book this stay";
+                const nightText = i18n[lang]?.night || "night";
+                const guestText = (i18n[lang]?.upToGuests || "Up to {n} guests").replace('{n}', prop.capacity);
+
+                return `
+                    <div class="min-w-[260px] flex-1 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col snap-center">
+                        <img src="${prop.img}" class="w-full h-36 object-cover rounded-xl mb-3 shadow-sm">
+                        <h3 class="font-bold text-slate-800 text-base leading-tight mb-1">${prop.name}</h3>
+                        <p class="text-brand font-semibold text-xs mb-3"><i class="fa-solid fa-location-dot mr-1"></i> ${prop.location}</p>
+                        
+                        <div class="space-y-2 flex-1 text-xs">
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-500 font-semibold">${priceLabel}</span>
+                                <span class="font-bold text-slate-800">$${prop.price}/${nightText}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-500 font-semibold">${ratingLabel}</span>
+                                <span class="font-bold text-slate-800"><i class="fa-solid fa-star text-yellow-400 text-xs mr-1"></i>${prop.rating}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                                <span class="text-slate-500 font-semibold">${capLabel}</span>
+                                <span class="font-bold text-slate-800">${guestText}</span>
+                            </div>
+                            <div class="py-1">
+                                <span class="text-slate-500 font-semibold block mb-1">${detailsLabel}</span>
+                                <p class="text-slate-600 leading-relaxed line-clamp-3">${prop.description || 'Modern & comfortable accommodation.'}</p>
+                            </div>
+                        </div>
+                        
+                        <button onclick="closeCompareModal(); openPayment(${prop.id})" class="w-full bg-brand-dark text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand transition shadow-md mt-4 cursor-pointer">
+                            ${bookBtnText}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeCompareModal() {
+            const modal = document.getElementById('compareModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
