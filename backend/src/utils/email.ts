@@ -1,84 +1,129 @@
-import nodemailer from 'nodemailer';
+/**
+ * Consolidated Email Service
+ * Uses Resend HTTPS API (Port 443) to prevent Render SMTP timeouts.
+ */
 
-const port = parseInt(process.env.SMTP_PORT || '465');
+const sendEmailViaResend = async (to: string, subject: string, html: string) => {
+  const apiKey = process.env.RESEND_API_KEY;
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: port,
-  secure: port === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  family: 4, // Forces IPv4 connection to bypass Render IPv6 timeouts
-  connectionTimeout: 10000,
-} as any);
+  if (!apiKey) {
+    console.warn('[EMAIL SERVICE] RESEND_API_KEY environment variable is not set. Email dispatch skipped.');
+    return;
+  }
 
-// 1. Automatic reply for submission of user enquiries
-export const sendEnquiryConfirmation = async (to: string, name: string, message: string) => {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'no-reply@reservationapp.com',
-    to,
-    subject: 'We Received Your Enquiry',
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <h2>Thank you for contacting us, ${name}!</h2>
-        <p>We have received your message:</p>
-        <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #2fa4a5;">
-          ${message}
-        </blockquote>
-        <p>Our team will get back to you shortly.</p>
-      </div>
-    `,
-  };
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || 'FindYourPlace <onboarding@resend.dev>',
+        to: [to],
+        subject,
+        html,
+      }),
+    });
 
-  await transporter.sendMail(mailOptions);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('[EMAIL SERVICE] Resend API Error:', errorData);
+    } else {
+      console.log(`[EMAIL SERVICE] Email successfully delivered to ${to}`);
+    }
+  } catch (error) {
+    console.error('[EMAIL SERVICE] Failed to send email via Resend:', error);
+  }
 };
 
-// 2. Confirmation email for successful property reservations
+// Helper function to safely format Date objects or strings
+const formatDate = (dateVal: any): string => {
+  if (!dateVal) return '';
+  if (dateVal instanceof Date) {
+    return dateVal.toISOString().split('T')[0];
+  }
+  return String(dateVal);
+};
+
+// 1. Enquiry Confirmation Export
+export const sendEnquiryConfirmation = async (
+  to: string,
+  name: string,
+  message: string
+): Promise<void> => {
+  const subject = 'We Received Your Enquiry - FindYourPlace';
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px;">
+      <h2 style="color: #2fa4a5;">Thank you for contacting us, ${name}!</h2>
+      <p>We have received your enquiry and will get back to you shortly.</p>
+      <div style="background: #f8fafc; padding: 15px; border-left: 4px solid #2fa4a5; margin: 15px 0;">
+        <p style="margin: 0; font-style: italic;">"${message}"</p>
+      </div>
+      <p style="color: #64748b; font-size: 12px;">FindYourPlace Support Team</p>
+    </div>
+  `;
+
+  await sendEmailViaResend(to, subject, html);
+};
+
+// 2. Booking Confirmation Export (Flexible signatures to accept Prisma Date objects)
 export const sendBookingConfirmation = async (
   to: string,
-  userName: string,
-  hotelName: string,
-  checkIn: Date,
-  checkOut: Date,
-  totalPrice: number
-) => {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || 'no-reply@reservationapp.com',
-    to,
-    subject: `Booking Confirmed - ${hotelName}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <h2>Booking Confirmation</h2>
-        <p>Dear ${userName},</p>
-        <p>Your reservation at <strong>${hotelName}</strong> has been successfully confirmed!</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr style="background: #f8f9fa;">
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Property:</strong></td>
-            <td style="padding: 10px; border: 1px solid #ddd;">${hotelName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Check-In Date:</strong></td>
-            <td style="padding: 10px; border: 1px solid #ddd;">${new Date(checkIn).toDateString()}</td>
-          </tr>
-          <tr style="background: #f8f9fa;">
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Check-Out Date:</strong></td>
-            <td style="padding: 10px; border: 1px solid #ddd;">${new Date(checkOut).toDateString()}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Amount:</strong></td>
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>$${totalPrice.toFixed(2)}</strong></td>
-          </tr>
-        </table>
-        
-        <p>We look forward to hosting you!</p>
-        <br />
-        <p>Best regards,<br /><strong>Hotel Reservations Team</strong></p>
-      </div>
-    `,
-  };
+  detailsOrName?: any,
+  hotelName?: any,
+  checkIn?: any,
+  checkOut?: any,
+  totalPrice?: any
+): Promise<void> => {
+  let name = 'Valued Guest';
+  let hotel = 'Your Property';
+  let dates = '';
+  let price = '';
 
-  return transporter.sendMail(mailOptions);
+  if (typeof detailsOrName === 'object' && detailsOrName !== null) {
+    name = detailsOrName.name || detailsOrName.guestName || name;
+    hotel = detailsOrName.hotelName || detailsOrName.hotel || hotel;
+    const start = formatDate(detailsOrName.checkIn);
+    const end = formatDate(detailsOrName.checkOut);
+    if (start && end) {
+      dates = `${start} to ${end}`;
+    }
+    if (detailsOrName.totalPrice || detailsOrName.price) {
+      price = `$${detailsOrName.totalPrice || detailsOrName.price}`;
+    }
+  } else {
+    if (typeof detailsOrName === 'string') name = detailsOrName;
+    if (hotelName) hotel = String(hotelName);
+
+    const start = formatDate(checkIn);
+    const end = formatDate(checkOut);
+    if (start && end) {
+      dates = `${start} to ${end}`;
+    }
+    if (totalPrice !== undefined && totalPrice !== null) {
+      price = `$${totalPrice}`;
+    }
+  }
+
+  const subject = `Booking Confirmed - ${hotel}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px;">
+      <h2 style="color: #2fa4a5;">Reservation Confirmed!</h2>
+      <p>Hi <strong>${name}</strong>,</p>
+      <p>Your reservation for <strong>${hotel}</strong> is confirmed.</p>
+      <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        ${dates ? `<p style="margin: 4px 0;"><strong>Dates:</strong> ${dates}</p>` : ''}
+        ${price ? `<p style="margin: 4px 0;"><strong>Total Paid:</strong> ${price}</p>` : ''}
+      </div>
+      <p>Thank you for booking with FindYourPlace!</p>
+    </div>
+  `;
+
+  await sendEmailViaResend(to, subject, html);
+};
+
+export default {
+  sendEnquiryConfirmation,
+  sendBookingConfirmation,
 };
